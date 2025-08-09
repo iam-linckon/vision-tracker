@@ -1,0 +1,4 @@
+---
+# defaults file for install_docker
+docker_package: docker-ce
+docker_compose_version: "2.29.2" # Latest stable as of now

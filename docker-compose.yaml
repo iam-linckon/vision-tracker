@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  nextjs-app:
+    image: your-dockerhub-username/nextjs-api:latest  # Private repo image
+    container_name: nextjs-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    # For private repos, you need to login first (see below)
+
+  react-client:
+    image: public-dockerhub-username/react-client:latest  # Public repo image
+    container_name: react-client
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M

@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  author: Hasan Mahmud
+  description: Role to install Docker and Docker Compose on Ubuntu 24.04
+  company: Your Company
+  license: MIT
+  min_ansible_version: 2.12
+  platforms:
+    - name: Ubuntu
+      versions:
+        - 24.04
+  galaxy_tags:
+    - docker
+    - compose
+    - ubuntu
+dependencies: []
