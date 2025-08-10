@@ -2,49 +2,79 @@
 - name: Build and push multi-arch images to Docker Hub (on control node)
   hosts: localhost
   connection: local
-  gather_facts: false
+  gather_facts: true
   become: true
+
   vars:
-    # Docker Hub credentials
     dockerhub_username: "linckon"
-    dockerhub_password: "{{ lookup('env','DOCKERHUB_PASSWORD') | default('change-me', true) }}"
+    dockerhub_password: "{{ lookup('env','DOCKERHUB_PASSWORD') | default(omit) }}"
 
-    # Repositories — API private, Client public
-    api_image_name: "linckon/goals-api"
-    client_image_name: "linckon/goals-client"
+    api_image_name: "linckon/vision-tracker-api"
+    client_image_name: "linckon/vision-tracker-client"
 
-    # Tags
     image_version: "v1"
     image_latest: true
 
-    # Paths on the control node
-    api_context: "{{ playbook_dir }}/api"
-    api_dockerfile: "{{ playbook_dir }}/api/Dockerfile"
+    api_context: "/home/iamlinckon/vision-tracker/api"
+    api_dockerfile: "/home/iamlinckon/vision-tracker/api/Dockerfile"
 
-    client_context: "{{ playbook_dir }}/client" 
-    client_dockerfile: "{{ playbook_dir }}/client/Dockerfile"
+    client_context: "/home/iamlinckon/vision-tracker/client"
+    client_dockerfile: "/home/iamlinckon/vision-tracker/client/Dockerfile"
 
-    # Platforms
-    docker_platforms:
-      - linux/amd64
-      - linux/arm64
-
-    # Buildx builder
+    docker_platforms: ["linux/amd64", "linux/arm64"]
     docker_builder_name: "multiarch_builder"
 
+    # Safe defaults
+    api_build_args: {}
+    client_build_args: {}
+    common_labels:
+      org.opencontainers.image.source: "https://github.com/your/repo"
+      org.opencontainers.image.version: "{{ image_version }}"
+
   pre_tasks:
+    - name: Ensure required base packages present (Ubuntu)
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - jq
+          - python3-apt
+        state: present
+        update_cache: yes
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Add Docker’s official GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Add Docker apt repository
+      apt_repository:
+        repo: "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['lsb']['codename'] }} stable"
+        filename: docker
+        state: present
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install Docker Engine and plugins
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+          - python3-docker
+        state: present
+        update_cache: yes
+      when: ansible_facts['os_family'] == 'Debian'
+
     - name: Verify Docker is installed
       command: docker --version
       register: docker_version
       changed_when: false
 
-    - name: Ensure python3-apt is present on Debian/Ubuntu (for apt tasks)
-      apt:
-        name: python3-apt
-        state: present
-        update_cache: yes
-      when: ansible_os_family | default('Debian') == 'Debian'
-
   roles:
-    - dockerx_setup
-    - build_and_push
+    - role: dockerx_setup
+    - role: build_and_push

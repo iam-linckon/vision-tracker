@@ -1,51 +1,28 @@
 ---
-# Ensure base packages for Docker/Buildx
-- name: Ensure base packages present (Debian/Ubuntu)
-  apt:
-    name:
-      - ca-certificates
-      - curl
-      - jq
-    state: present
-    update_cache: yes
-  when: ansible_os_family | default('Debian') == 'Debian'
-
-# Ensure Docker service is running
 - name: Ensure Docker service is running
   systemd:
     name: docker
     state: started
     enabled: yes
-  when: ansible_os_family | default('Debian') == 'Debian'
 
-# Install Buildx plugin if missing
-- name: Ensure Docker Buildx plugin is installed (Debian/Ubuntu)
-  apt:
-    name: docker-buildx-plugin
-    state: present
-  when: ansible_os_family | default('Debian') == 'Debian'
-
-# Verify Buildx availability
-- name: Check Buildx version
+- name: Ensure Buildx is available
   command: docker buildx version
   register: buildx_check
   changed_when: false
 
-# Create or use Buildx builder
-- name: Create or use Buildx builder
+- name: Create or select Buildx builder and bootstrap
   shell: |
     set -euo pipefail
-    BUILDER_DIR="$HOME/.docker/buildx/instances/{{ docker_builder_name }}"
-    if [ ! -d "$BUILDER_DIR" ]; then
+    if ! docker buildx inspect {{ docker_builder_name }} >/dev/null 2>&1; then
       docker buildx create --name {{ docker_builder_name }} --driver docker-container --use
     else
       docker buildx use {{ docker_builder_name }}
     fi
+    docker buildx inspect --bootstrap
   args:
     executable: /bin/bash
   changed_when: false
 
-# Enable binfmt/QEMU for multi-arch builds
 - name: Enable binfmt/QEMU for cross-arch builds
   shell: |
     set -euo pipefail

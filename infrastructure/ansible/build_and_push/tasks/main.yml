@@ -2,27 +2,26 @@
 - name: Docker login to Docker Hub
   community.docker.docker_login:
     username: "{{ dockerhub_username }}"
-    password: "{{ dockerhub_password }}"
+    password: "{{ dockerhub_password | default(omit) }}"
+  no_log: true
 
-# API (private repo)
-- name: Build and push API image (multi-arch)
-  community.docker.docker_image:
-    name: "{{ api_image_name }}"
-    repository: "{{ api_image_name }}"
-    push: true
-    source: build
-    build:
-      path: "{{ api_context }}"
-      dockerfile: "{{ api_dockerfile }}"
-      pull: true
-      nocache: false
-      platform: "{{ docker_platforms }}"
-      buildargs: "{{ api_build_args }}"
-      labels: "{{ common_labels }}"
-    tag: "{{ image_version }}"
+- name: Build and push API image (multi-arch) with buildx
+  shell: |
+    set -euo pipefail
+    docker buildx build \
+      --builder {{ docker_builder_name }} \
+      --platform {{ docker_platforms | join(',') }} \
+      --file {{ api_dockerfile }} \
+      --label org.opencontainers.image.version={{ image_version }} \
+      {{ api_build_args | dict2items | map('join', '=') | map('regex_replace', '^(.*)$', '--build-arg \1') | join(' ') }} \
+      --tag {{ api_image_name }}:{{ image_version }} \
+      --push \
+      {{ api_context }}
+  args:
+    executable: /bin/bash
 
-- name: Optionally tag and push API :latest manifest
-  when: image_latest
+- name: Optionally tag API :latest manifest
+  when: image_latest | default(false)
   shell: |
     set -euo pipefail
     docker buildx imagetools create \
@@ -31,25 +30,23 @@
   args:
     executable: /bin/bash
 
-# Client (public repo)
-- name: Build and push Client image (multi-arch)
-  community.docker.docker_image:
-    name: "{{ client_image_name }}"
-    repository: "{{ client_image_name }}"
-    push: true
-    source: build
-    build:
-      path: "{{ client_context }}"
-      dockerfile: "{{ client_dockerfile }}"
-      pull: true
-      nocache: false
-      platform: "{{ docker_platforms }}"
-      buildargs: "{{ client_build_args }}"
-      labels: "{{ common_labels }}"
-    tag: "{{ image_version }}"
+- name: Build and push Client image (multi-arch) with buildx
+  shell: |
+    set -euo pipefail
+    docker buildx build \
+      --builder {{ docker_builder_name }} \
+      --platform {{ docker_platforms | join(',') }} \
+      --file {{ client_dockerfile }} \
+      --label org.opencontainers.image.version={{ image_version }} \
+      {{ client_build_args | dict2items | map('join', '=') | map('regex_replace', '^(.*)$', '--build-arg \1') | join(' ') }} \
+      --tag {{ client_image_name }}:{{ image_version }} \
+      --push \
+      {{ client_context }}
+  args:
+    executable: /bin/bash
 
-- name: Optionally tag and push Client :latest manifest
-  when: image_latest
+- name: Optionally tag Client :latest manifest
+  when: image_latest | default(false)
   shell: |
     set -euo pipefail
     docker buildx imagetools create \
