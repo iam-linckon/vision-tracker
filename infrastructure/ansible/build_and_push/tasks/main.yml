@@ -1,0 +1,59 @@
+---
+- name: Docker login to Docker Hub
+  community.docker.docker_login:
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+
+# API (private repo)
+- name: Build and push API image (multi-arch)
+  community.docker.docker_image:
+    name: "{{ api_image_name }}"
+    repository: "{{ api_image_name }}"
+    push: true
+    source: build
+    build:
+      path: "{{ api_context }}"
+      dockerfile: "{{ api_dockerfile }}"
+      pull: true
+      nocache: false
+      platform: "{{ docker_platforms }}"
+      buildargs: "{{ api_build_args }}"
+      labels: "{{ common_labels }}"
+    tag: "{{ image_version }}"
+
+- name: Optionally tag and push API :latest manifest
+  when: image_latest
+  shell: |
+    set -euo pipefail
+    docker buildx imagetools create \
+      -t {{ api_image_name }}:latest \
+      {{ api_image_name }}:{{ image_version }}
+  args:
+    executable: /bin/bash
+
+# Client (public repo)
+- name: Build and push Client image (multi-arch)
+  community.docker.docker_image:
+    name: "{{ client_image_name }}"
+    repository: "{{ client_image_name }}"
+    push: true
+    source: build
+    build:
+      path: "{{ client_context }}"
+      dockerfile: "{{ client_dockerfile }}"
+      pull: true
+      nocache: false
+      platform: "{{ docker_platforms }}"
+      buildargs: "{{ client_build_args }}"
+      labels: "{{ common_labels }}"
+    tag: "{{ image_version }}"
+
+- name: Optionally tag and push Client :latest manifest
+  when: image_latest
+  shell: |
+    set -euo pipefail
+    docker buildx imagetools create \
+      -t {{ client_image_name }}:latest \
+      {{ client_image_name }}:{{ image_version }}
+  args:
+    executable: /bin/bash

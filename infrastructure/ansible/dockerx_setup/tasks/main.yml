@@ -1,0 +1,56 @@
+---
+# Ensure base packages for Docker/Buildx
+- name: Ensure base packages present (Debian/Ubuntu)
+  apt:
+    name:
+      - ca-certificates
+      - curl
+      - jq
+    state: present
+    update_cache: yes
+  when: ansible_os_family | default('Debian') == 'Debian'
+
+# Ensure Docker service is running
+- name: Ensure Docker service is running
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+  when: ansible_os_family | default('Debian') == 'Debian'
+
+# Install Buildx plugin if missing
+- name: Ensure Docker Buildx plugin is installed (Debian/Ubuntu)
+  apt:
+    name: docker-buildx-plugin
+    state: present
+  when: ansible_os_family | default('Debian') == 'Debian'
+
+# Verify Buildx availability
+- name: Check Buildx version
+  command: docker buildx version
+  register: buildx_check
+  changed_when: false
+
+# Create or use Buildx builder
+- name: Create or use Buildx builder
+  shell: |
+    set -euo pipefail
+    BUILDER_DIR="$HOME/.docker/buildx/instances/{{ docker_builder_name }}"
+    if [ ! -d "$BUILDER_DIR" ]; then
+      docker buildx create --name {{ docker_builder_name }} --driver docker-container --use
+    else
+      docker buildx use {{ docker_builder_name }}
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+# Enable binfmt/QEMU for multi-arch builds
+- name: Enable binfmt/QEMU for cross-arch builds
+  shell: |
+    set -euo pipefail
+    docker run --privileged --rm tonistiigi/binfmt --install all
+  args:
+    executable: /bin/bash
+  register: binfmt_out
+  changed_when: "'installing' in binfmt_out.stdout or 'updating' in binfmt_out.stdout"

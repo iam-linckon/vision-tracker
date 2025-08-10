@@ -1,0 +1,50 @@
+---
+- name: Build and push multi-arch images to Docker Hub (on control node)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: true
+  vars:
+    # Docker Hub credentials
+    dockerhub_username: "linckon"
+    dockerhub_password: "{{ lookup('env','DOCKERHUB_PASSWORD') | default('change-me', true) }}"
+
+    # Repositories — API private, Client public
+    api_image_name: "linckon/goals-api"
+    client_image_name: "linckon/goals-client"
+
+    # Tags
+    image_version: "v1"
+    image_latest: true
+
+    # Paths on the control node
+    api_context: "{{ playbook_dir }}/api"
+    api_dockerfile: "{{ playbook_dir }}/api/Dockerfile"
+
+    client_context: "{{ playbook_dir }}/client" 
+    client_dockerfile: "{{ playbook_dir }}/client/Dockerfile"
+
+    # Platforms
+    docker_platforms:
+      - linux/amd64
+      - linux/arm64
+
+    # Buildx builder
+    docker_builder_name: "multiarch_builder"
+
+  pre_tasks:
+    - name: Verify Docker is installed
+      command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Ensure python3-apt is present on Debian/Ubuntu (for apt tasks)
+      apt:
+        name: python3-apt
+        state: present
+        update_cache: yes
+      when: ansible_os_family | default('Debian') == 'Debian'
+
+  roles:
+    - dockerx_setup
+    - build_and_push

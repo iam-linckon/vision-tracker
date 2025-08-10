@@ -2,8 +2,8 @@ version: "3.8"
 
 services:
   nextjs-app:
-    image: your-dockerhub-username/nextjs-api:latest  # Private repo image
-    container_name: nextjs-app
+    image: linckon/goals-api:v1  # Private repo image
+    container_name: goals-app-api
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -24,8 +24,8 @@ services:
     # For private repos, you need to login first (see below)
 
   react-client:
-    image: public-dockerhub-username/react-client:latest  # Public repo image
-    container_name: react-client
+    image: linckon/goals-client:v1  # Public repo image
+    container_name: goals-app-client
     restart: unless-stopped
     ports:
       - "80:80"
