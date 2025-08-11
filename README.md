@@ -15,6 +15,21 @@
 
 VisionTracker is a professional web application designed to help users set, track, complete, and delete their yearly goals efficiently. Built with a React frontend and a Next.js backend, this app provides a seamless experience for managing personal or professional objectives throughout the year.  
 
+This project automates the setup of a full-stack development and production environment using React (frontend) and Next.js (backend), managed via Docker Compose and Ansible. Key features include:
+
+ - [x] Provisioning a VM with Docker and Docker Compose using Ansible
+
+ - [x] Local development support with live-reloading for seamless developer experience
+
+ - [x] Production-ready Docker Compose with restart policies and health checks
+
+ - [x] Ansible playbooks to:
+
+      - Build multi-architecture Docker images (x86_64, arm64)
+      - Push images to a private DockerHub registry
+      - Deploy the production stack to the remote VM
+      <!-- - Image size analysis and strategies to reduce image sizes -->
+
 # Application Features
 
 ## 1. Local Development Environment
