@@ -40,8 +40,8 @@ VisionTracker is a professional web application designed to help users set, trac
 
 - The setup is designed to be easily scalable and portable across different environments, making it suitable for both development and production use cases.
 
-<!-- ## Demo
-![demo](docs/demo.png) -->
+## Demo
+![demo](docs/demo.png)
 
 # Local Setup
 
