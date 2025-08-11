@@ -1,0 +1,54 @@
+---
+- name: Deploy Vision Tracker Application
+  hosts: webservers
+  become: true
+  vars:
+    dockerhub_username: "linckon"
+    dockerhub_password: "{{ lookup('env','DOCKERHUB_PASSWORD') | default(omit) }}"
+
+  tasks:
+    - name: Ensure Docker is installed
+      ansible.builtin.command: docker --version
+      register: docker_installed
+      failed_when: docker_installed.rc != 0
+      ignore_errors: false
+
+    - name: Ensure Docker Compose is installed
+      ansible.builtin.command: docker-compose --version
+      register: docker_compose_installed
+      failed_when: docker_compose_installed.rc != 0
+      ignore_errors: false
+
+    - name: Log in to Docker Hub (for private API image)
+      ansible.builtin.shell: |
+        echo "{{ dockerhub_password }}" | docker login -u "{{ dockerhub_username }}" --password-stdin
+      no_log: true
+
+    - name: Copy application files to the server
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../docker-compose.yml"
+        dest: /home/ubuntu/docker-compose.yml
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    - name: Pull the backend image from the private Docker Hub repository
+      ansible.builtin.shell: docker pull linckon/vision-tracker-api:v1
+
+    - name: Pull the frontend image from the public Docker Hub repository
+      ansible.builtin.shell: docker pull linckon/vision-tracker-client:v1
+
+    - name: Start the application using Docker Compose
+      ansible.builtin.shell: docker-compose up -d
+      args:
+        chdir: /home/ubuntu
+
+    - name: Verify the application is running
+      ansible.builtin.shell: docker-compose ps
+      args:
+        chdir: /home/ubuntu
+      register: compose_status
+
+    - name: Display Docker Compose status
+      ansible.builtin.debug:
+        msg: "{{ compose_status.stdout }}"

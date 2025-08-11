@@ -1,4 +1,6 @@
+# =========================
 # Stage 1: Build the React app
+# =========================
 FROM node:18-alpine AS builder
 
 # Set working directory
@@ -6,34 +8,30 @@ WORKDIR /app
 
 # Install dependencies
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm ci --only=production
 
-# Copy source files
+# Copy all source files
 COPY . .
 
-# Build the React app for production
+# Build the app
 RUN npm run build
 
-# Stage 2: Serve the app with a lightweight web server (nginx)
+# =========================
+# Stage 2: Serve with nginx
+# =========================
 FROM nginx:stable-alpine
 
-# Create a non-root user and group for running nginx
-RUN addgroup -S reactgroup && adduser -S reactuser -G reactgroup
-
-# Remove default nginx static assets
+# Remove default nginx website
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy built React app from builder stage
+# Copy built files from builder stage
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Change ownership to non-root user
-RUN chown -R reactuser:reactgroup /usr/share/nginx/html
+# Copy custom nginx config (optional, but recommended for SPA)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Switch to non-root user
-USER reactuser
-
-# Expose default nginx port 80
+# Expose port 80
 EXPOSE 80
 
-# Start nginx server
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

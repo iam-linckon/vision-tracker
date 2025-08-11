@@ -2,8 +2,8 @@ version: "3.8"
 
 services:
   nextjs-app:
-    image: linckon/goals-api:v1  # Private repo image
-    container_name: goals-app-api
+    image: linckon/vision-tracker-api:v1  # Private repo image
+    container_name: vision-tracker-api
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -24,8 +24,8 @@ services:
     # For private repos, you need to login first (see below)
 
   react-client:
-    image: linckon/goals-client:v1  # Public repo image
-    container_name: goals-app-client
+    image: linckon/vision-tracker-client:v1  # Public repo image
+    container_name: vision-tracker-client
     restart: unless-stopped
     ports:
       - "80:80"
