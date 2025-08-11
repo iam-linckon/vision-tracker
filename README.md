@@ -55,6 +55,15 @@ This project automates the setup of a full-stack development and production envi
 
 - The setup is designed to be easily scalable and portable across different environments, making it suitable for both development and production use cases.
 
+## Future Enhancements
+
+- User authentication and profiles
+- Persistent database integration (e.g., MongoDB, PostgreSQL)
+- Notifications and reminders
+- Analytics dashboard for goal progress
+- Automate testing, building, and deployment with CI/CD
+- Deployment to Kubernetes for scaling 
+
 ## Demo
 ![demo](docs/demo.png)
 
@@ -95,7 +104,8 @@ ansible-playbook -i inventory.ini deploy.yml
 
 Ensure you have the following environment variables set in your `.env` file or in your environment:
 ```bash
-DOCKERHUB_PASSWORD=your_dockerhub_password
+export DOCKERHUB_PASSWORD=your_dockerhub_password
+source .env
 ```
 
 
